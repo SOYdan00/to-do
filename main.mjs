@@ -14,25 +14,36 @@ app.get("/", async (request, response) => {
   const html = template.replace(
     "<!-- todos -->",
     todos
+      .sort((a) => a.done)
+      // .sort((a, b) => (a.updated - b.updated || !a.done ? 1 : -1))
       .map(
         (todo) => `
           <li>
-            <span>${escapeHTML(todo.title)}</span>
-            <form method="post" action="/delete" class="delete-form">
+            <form action="/edit" method="post">
               <input type="hidden" name="id" value="${todo.id}" />
-              <button type="submit">削除</button>
+              <input type="checkbox" name="done" ${
+                todo.done ? "checked " : ""
+              }/>
+              <input type="string" name="title" value="${escapeHTML(
+                todo.title
+              )}" />
+              <button type="submit">登録</button>
+            </form>
+            <form action="/delete" method="post">
+              <input type="hidden" name="id" value="${todo.id}" />
+              <input type="submit" value="削除" />
             </form>
           </li>
-        `,
+        `
       )
-      .join(""),
+      .join("")
   );
   response.send(html);
 });
 
 app.post("/create", async (request, response) => {
   await prisma.todo.create({
-    data: { title: request.body.title },
+    data: { title: request.body.title, done: request.body.done === "on" },
   });
   response.redirect("/");
 });
@@ -40,6 +51,17 @@ app.post("/create", async (request, response) => {
 app.post("/delete", async (request, response) => {
   await prisma.todo.delete({
     where: { id: parseInt(request.body.id) },
+  });
+  response.redirect("/");
+});
+
+app.post("/edit", async (request, response) => {
+  await prisma.todo.update({
+    where: { id: parseInt(request.body.id) },
+    data: {
+      title: request.body.title,
+      done: request.body.done === "on",
+    },
   });
   response.redirect("/");
 });
