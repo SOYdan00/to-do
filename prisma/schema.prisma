@@ -6,8 +6,9 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 model Todo {
   id    Int    @id @default(autoincrement())
   title String
+  done Boolean
+  updated DateTime @default(now())
 }
